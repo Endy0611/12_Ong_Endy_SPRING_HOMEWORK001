@@ -2,7 +2,7 @@ package com.example._2_ong_endy_spring_homework001.controller;
 
 
 import com.example._2_ong_endy_spring_homework001.model.entity.Ticket;
-import com.example._2_ong_endy_spring_homework001.model.entity.TicketStatus;
+import com.example._2_ong_endy_spring_homework001.model.enums.TicketStatus;
 import com.example._2_ong_endy_spring_homework001.model.request.TicketPaymentRequest;
 import com.example._2_ong_endy_spring_homework001.model.request.TicketRequest;
 import com.example._2_ong_endy_spring_homework001.model.response.ResponseApi;
@@ -20,16 +20,25 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TicketController {
 
     private final ArrayList<Ticket> TICKET_LIST = new ArrayList<>();
-    private final AtomicLong ATOMIC_LONG = new AtomicLong(4L);
+    private final AtomicLong ATOMIC_LONG = new AtomicLong(6L);
     public TicketController() {
         TICKET_LIST.add(new Ticket(1L, "Endy", "2026-02-11", "Cambodia", "Phnom Penh", 180.50, true, "BOOKED", "A1"));
         TICKET_LIST.add(new Ticket(2L, "Dine", "2026-03-09", "Cambodia", "Kompot", 200.50, true, "COMPLETED", "A2"));
-        TICKET_LIST.add(new Ticket(3L, "Rith", "2026-03-09", "Cambodia", "Kompong Chhnang", 99.99, false, "COMPLETED", "A3"));
+        TICKET_LIST.add(new Ticket(3L, "Sovannarith", "2026-02-09", "Cambodia", "BattamBang", 199.99, false, "COMPLETED", "A3"));
+        TICKET_LIST.add(new Ticket(4L, "Vesna", "2026-02-03", "Cambodia", "Moundoul Kiri", 299.99, false, "COMPLETED", "A3"));
+        TICKET_LIST.add(new Ticket(5L, "Kanha", "2026-02-04", "Cambodia", "Kirirom", 92.99, false, "COMPLETED", "A3"));
+
     }
 
     @GetMapping
-    public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets() {
-        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, TICKET_LIST,LocalDateTime.now());
+    public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+
+
+        int fromIndex = (page-1) * size;
+        int toIndex = Math.min(fromIndex + size, TICKET_LIST.size());
+        List<Ticket> PAGINATION_LIST = TICKET_LIST.subList(fromIndex, toIndex);
+
+        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, PAGINATION_LIST ,LocalDateTime.now());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
@@ -45,7 +54,7 @@ public class TicketController {
             ResponseApi<Ticket> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, foundTicket, LocalDateTime.now());
             return  ResponseEntity.ok(res);
         }
-        return ResponseEntity.ok(null);
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping
@@ -57,10 +66,10 @@ public class TicketController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ResponseApi<List<Ticket>>> searchByName(@RequestParam String name) {
+    public ResponseEntity<ResponseApi<Ticket>> searchByName(@RequestParam String name) {
         for (Ticket ticket : TICKET_LIST) {
             if (ticket.getPassengerName().equals(name)){
-                ResponseApi<List<Ticket>> res = new ResponseApi(true, "Ticket retrived successfully", HttpStatus.OK, ticket,LocalDateTime.now());
+                ResponseApi<Ticket> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, ticket,LocalDateTime.now());
                 return new ResponseEntity<>(res, HttpStatus.OK);
             }
         }
@@ -97,14 +106,19 @@ public class TicketController {
     }
 
     @DeleteMapping("/{ticket-id}")
-    public void deleteById(@PathVariable("ticket-id") long id) {
-        TICKET_LIST.removeIf(t -> t.getTicketId().equals(id));
+    public ResponseEntity<Ticket> deleteById(@PathVariable("ticket-id") long id) {
+
+        boolean ticketFound = TICKET_LIST.removeIf(t -> t.getTicketId().equals(id));
+        if(ticketFound) {
+            return ResponseEntity.ok(null);
+        }else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping ("/bulk")
     public ResponseEntity<ArrayList<Ticket>> createMultiTicket(@RequestBody List<TicketRequest> ticketRequests  ) {
         ArrayList<Ticket> newTicket = new ArrayList<>();
-
         for (TicketRequest ticketRequest : ticketRequests) {
             Ticket ticket = new Ticket(
                     ATOMIC_LONG.getAndIncrement(),
@@ -132,11 +146,6 @@ public class TicketController {
                 updatePaymentStatus.add(ticket);
             }
         }
-//        TICKET_LIST.addAll(updateStatus);
         return ResponseEntity.ok(updatePaymentStatus);
     }
-
-
-
-
 }

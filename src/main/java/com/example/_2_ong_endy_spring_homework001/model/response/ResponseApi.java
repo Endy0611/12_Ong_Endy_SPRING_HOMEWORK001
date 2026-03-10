@@ -16,6 +16,5 @@ public class ResponseApi<T> {
     private HttpStatus status;
     private T payload;
     private LocalDateTime timestamp;
-
 }
 
