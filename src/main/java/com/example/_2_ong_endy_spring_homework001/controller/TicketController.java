@@ -1,0 +1,142 @@
+package com.example._2_ong_endy_spring_homework001.controller;
+
+
+import com.example._2_ong_endy_spring_homework001.model.entity.Ticket;
+import com.example._2_ong_endy_spring_homework001.model.entity.TicketStatus;
+import com.example._2_ong_endy_spring_homework001.model.request.TicketPaymentRequest;
+import com.example._2_ong_endy_spring_homework001.model.request.TicketRequest;
+import com.example._2_ong_endy_spring_homework001.model.response.ResponseApi;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+@RestController
+@RequestMapping("/api/v1/tickets")
+public class TicketController {
+
+    private final ArrayList<Ticket> TICKET_LIST = new ArrayList<>();
+    private final AtomicLong ATOMIC_LONG = new AtomicLong(4L);
+    public TicketController() {
+        TICKET_LIST.add(new Ticket(1L, "Endy", "2026-02-11", "Cambodia", "Phnom Penh", 180.50, true, "BOOKED", "A1"));
+        TICKET_LIST.add(new Ticket(2L, "Dine", "2026-03-09", "Cambodia", "Kompot", 200.50, true, "COMPLETED", "A2"));
+        TICKET_LIST.add(new Ticket(3L, "Rith", "2026-03-09", "Cambodia", "Kompong Chhnang", 99.99, false, "COMPLETED", "A3"));
+    }
+
+    @GetMapping
+    public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets() {
+        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, TICKET_LIST,LocalDateTime.now());
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    @GetMapping("/{ticket-id}")
+    public ResponseEntity<ResponseApi<Ticket>> getTicketById(@PathVariable("ticket-id") Long id) {
+        Ticket foundTicket = null;
+        for (Ticket ticket : TICKET_LIST) {
+            if (ticket.getTicketId().equals(id)){
+                foundTicket = ticket;
+            }
+        }
+        if (foundTicket != null) {
+            ResponseApi<Ticket> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, foundTicket, LocalDateTime.now());
+            return  ResponseEntity.ok(res);
+        }
+        return ResponseEntity.ok(null);
+    }
+
+    @PostMapping
+    public Ticket createNewTicket(@RequestBody TicketRequest ticketrequest) {
+        Ticket ticket = new Ticket(ATOMIC_LONG.getAndIncrement(), ticketrequest.getPassengerName(), ticketrequest.getTravelDate(), ticketrequest.getSourceStation(), ticketrequest.getDestinationStation()
+        , ticketrequest.getPrice(), ticketrequest.isPaymentStatus(), ticketrequest.getTicketStatus(), ticketrequest.getSeatNumber());
+        TICKET_LIST.add(ticket);
+        return ticket;
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ResponseApi<List<Ticket>>> searchByName(@RequestParam String name) {
+        for (Ticket ticket : TICKET_LIST) {
+            if (ticket.getPassengerName().equals(name)){
+                ResponseApi<List<Ticket>> res = new ResponseApi(true, "Ticket retrived successfully", HttpStatus.OK, ticket,LocalDateTime.now());
+                return new ResponseEntity<>(res, HttpStatus.OK);
+            }
+        }
+        return null;
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<ResponseApi<List<Ticket>>> filter(@RequestParam TicketStatus ticketStatus, @RequestParam String travelDate) {
+        ArrayList<Ticket> filterTicket = new ArrayList<>();
+        for (Ticket ticket : TICKET_LIST) {
+            if (ticket.getTicketStatus().equals(ticketStatus.toString()) && ticket.getTravelDate().equals(travelDate)){
+                filterTicket.add(ticket);
+            }
+        }
+        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, filterTicket,LocalDateTime.now());
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    @PutMapping ("/{ticket-id}")
+    public Ticket updateById(@PathVariable("ticket-id") Long id, @RequestBody TicketRequest ticketRequest) {
+        for (Ticket ticket : TICKET_LIST) {
+            if (ticket.getTicketId().equals(id)){
+                ticket.setPassengerName(ticketRequest.getPassengerName());
+                ticket.setTravelDate(ticketRequest.getTravelDate());
+                ticket.setSourceStation(ticketRequest.getSourceStation());
+                ticket.setDestinationStation(ticketRequest.getDestinationStation());
+                ticket.setPrice(ticketRequest.getPrice());
+                ticket.setPaymentStatus(ticketRequest.isPaymentStatus());
+                ticket.setTicketStatus(ticketRequest.getTicketStatus());
+                ticket.setSeatNumber(ticketRequest.getSeatNumber());
+            }
+        }
+        return null;
+    }
+
+    @DeleteMapping("/{ticket-id}")
+    public void deleteById(@PathVariable("ticket-id") long id) {
+        TICKET_LIST.removeIf(t -> t.getTicketId().equals(id));
+    }
+
+    @PostMapping ("/bulk")
+    public ResponseEntity<ArrayList<Ticket>> createMultiTicket(@RequestBody List<TicketRequest> ticketRequests  ) {
+        ArrayList<Ticket> newTicket = new ArrayList<>();
+
+        for (TicketRequest ticketRequest : ticketRequests) {
+            Ticket ticket = new Ticket(
+                    ATOMIC_LONG.getAndIncrement(),
+                    ticketRequest.getPassengerName(),
+                    ticketRequest.getTravelDate(),
+                    ticketRequest.getSourceStation(),
+                    ticketRequest.getDestinationStation(),
+                    ticketRequest.getPrice(),
+                    ticketRequest.isPaymentStatus(),
+                    ticketRequest.getTicketStatus(),
+                    ticketRequest.getSeatNumber());
+            newTicket.add(ticket);
+        }
+        TICKET_LIST.addAll(newTicket);
+        return ResponseEntity.ok(newTicket);
+    }
+
+    @PutMapping("/bulk")
+    public ResponseEntity<ArrayList<Ticket>> updatePaymentStatus(@RequestBody TicketPaymentRequest ticketPaymentRequest) {
+        ArrayList<Ticket> updatePaymentStatus = new ArrayList<>();
+
+        for (Ticket ticket : TICKET_LIST) {
+            if (ticketPaymentRequest.getTicketId().contains(ticket.getTicketId())) {
+                ticket.setPaymentStatus(ticketPaymentRequest.isPaymentStatus());
+                updatePaymentStatus.add(ticket);
+            }
+        }
+//        TICKET_LIST.addAll(updateStatus);
+        return ResponseEntity.ok(updatePaymentStatus);
+    }
+
+
+
+
+}
