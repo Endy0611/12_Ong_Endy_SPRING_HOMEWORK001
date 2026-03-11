@@ -31,14 +31,8 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-
-
-        int fromIndex = (page-1) * size;
-        int toIndex = Math.min(fromIndex + size, TICKET_LIST.size());
-        List<Ticket> PAGINATION_LIST = TICKET_LIST.subList(fromIndex, toIndex);
-
-        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, PAGINATION_LIST ,LocalDateTime.now());
+    public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets() {
+        ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, TICKET_LIST,LocalDateTime.now());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
@@ -58,11 +52,12 @@ public class TicketController {
     }
 
     @PostMapping
-    public Ticket createNewTicket(@RequestBody TicketRequest ticketrequest) {
+    public ResponseEntity<ResponseApi<Ticket>> createNewTicket(@RequestBody TicketRequest ticketrequest) {
         Ticket ticket = new Ticket(ATOMIC_LONG.getAndIncrement(), ticketrequest.getPassengerName(), ticketrequest.getTravelDate(), ticketrequest.getSourceStation(), ticketrequest.getDestinationStation()
         , ticketrequest.getPrice(), ticketrequest.isPaymentStatus(), ticketrequest.getTicketStatus(), ticketrequest.getSeatNumber());
         TICKET_LIST.add(ticket);
-        return ticket;
+        ResponseApi<Ticket> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, ticket,LocalDateTime.now());
+        return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
     @GetMapping("/search")
