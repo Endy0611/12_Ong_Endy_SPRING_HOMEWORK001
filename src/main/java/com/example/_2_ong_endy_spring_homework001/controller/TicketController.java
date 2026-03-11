@@ -6,6 +6,7 @@ import com.example._2_ong_endy_spring_homework001.model.enums.TicketStatus;
 import com.example._2_ong_endy_spring_homework001.model.request.TicketPaymentRequest;
 import com.example._2_ong_endy_spring_homework001.model.request.TicketRequest;
 import com.example._2_ong_endy_spring_homework001.model.response.ResponseApi;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,12 +31,15 @@ public class TicketController {
 
     }
 
+
+    @Operation(summary = "Get all tickets")
     @GetMapping
     public ResponseEntity<ResponseApi<List<Ticket>>> getAllTickets() {
         ResponseApi<List<Ticket>> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, TICKET_LIST,LocalDateTime.now());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(summary = "Gat a ticket by ID")
     @GetMapping("/{ticket-id}")
     public ResponseEntity<ResponseApi<Ticket>> getTicketById(@PathVariable("ticket-id") Long id) {
         Ticket foundTicket = null;
@@ -51,6 +55,7 @@ public class TicketController {
         return ResponseEntity.notFound().build();
     }
 
+    @Operation(summary = "Create a new ticket")
     @PostMapping
     public ResponseEntity<ResponseApi<Ticket>> createNewTicket(@RequestBody TicketRequest ticketrequest) {
         Ticket ticket = new Ticket(ATOMIC_LONG.getAndIncrement(), ticketrequest.getPassengerName(), ticketrequest.getTravelDate(), ticketrequest.getSourceStation(), ticketrequest.getDestinationStation()
@@ -60,17 +65,24 @@ public class TicketController {
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
+
+    @Operation(summary = "Search Tickets by passenger name")
     @GetMapping("/search")
     public ResponseEntity<ResponseApi<Ticket>> searchByName(@RequestParam String name) {
+
         for (Ticket ticket : TICKET_LIST) {
             if (ticket.getPassengerName().equals(name)){
                 ResponseApi<Ticket> res = new ResponseApi<>(true, "Ticket retrived successfully", HttpStatus.OK, ticket,LocalDateTime.now());
                 return new ResponseEntity<>(res, HttpStatus.OK);
+            } else {
+                ResponseApi<Ticket> res = new ResponseApi<>(true, "No tickets found for the given passenger name", HttpStatus.OK,null,LocalDateTime.now());
+                return new ResponseEntity<>(res, HttpStatus.NOT_FOUND);
             }
         }
         return null;
     }
 
+    @Operation(summary = "Filter tickets by status and travel date")
     @GetMapping("/filter")
     public ResponseEntity<ResponseApi<List<Ticket>>> filter(@RequestParam TicketStatus ticketStatus, @RequestParam String travelDate) {
         ArrayList<Ticket> filterTicket = new ArrayList<>();
@@ -83,6 +95,7 @@ public class TicketController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(summary = "Update a ticket by ID")
     @PutMapping ("/{ticket-id}")
     public Ticket updateById(@PathVariable("ticket-id") Long id, @RequestBody TicketRequest ticketRequest) {
         for (Ticket ticket : TICKET_LIST) {
@@ -100,6 +113,7 @@ public class TicketController {
         return null;
     }
 
+    @Operation(summary = "Delete a ticket using ID")
     @DeleteMapping("/{ticket-id}")
     public ResponseEntity<Ticket> deleteById(@PathVariable("ticket-id") long id) {
 
@@ -111,6 +125,7 @@ public class TicketController {
         }
     }
 
+    @Operation(summary = "Create multiple new Tickets")
     @PostMapping ("/bulk")
     public ResponseEntity<ArrayList<Ticket>> createMultiTicket(@RequestBody List<TicketRequest> ticketRequests  ) {
         ArrayList<Ticket> newTicket = new ArrayList<>();
@@ -131,6 +146,7 @@ public class TicketController {
         return ResponseEntity.ok(newTicket);
     }
 
+    @Operation(summary = "Update payment status of multiple tickets")
     @PutMapping("/bulk")
     public ResponseEntity<ArrayList<Ticket>> updatePaymentStatus(@RequestBody TicketPaymentRequest ticketPaymentRequest) {
         ArrayList<Ticket> updatePaymentStatus = new ArrayList<>();
